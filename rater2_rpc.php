@@ -102,6 +102,6 @@ default:    // vote recorded normally
 }
 
 // Updating the ratingbar and echo back to the javascript
-$newBar = $Rater->withWrapper(0)->Render();
+$newBar = $Rater->withWrapper(0)->withSize($size)->Render();
 echo implode("\n", array($newBar, $message));
 ?>
