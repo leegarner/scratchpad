@@ -6,7 +6,6 @@ $(document).ready(function() {
         event.preventDefault();
         var div = $(this).parent();
         var parent1 = div.parent();
-console.log(parent1);
         var parent2 = parent1.parent();
         var type = div.data("type");
         var item_id = div.data("item");
@@ -17,7 +16,6 @@ console.log(parent1);
             "&q=" + item_id + "&c=" + units + "&s=" + size +
             "&t=" + ip +
             "&j=" + $(this).data("points");
-console.log(url);
         $.get(url, function(data) {
             parent2.html(data);
         });
