@@ -1,0 +1,17 @@
+div.ratingstars  {
+    color: #999;
+}
+.ratingStarChecked {
+    color: goldenrod;
+}
+
+.ratingstars {
+    unicode-bidi: bidi-override;
+    direction: rtl;
+}
+div.ratingstars.enabled > i:hover:before,
+div.ratingstars.enabled > i:hover ~ i:before {
+    /* Force full star value from FontAwesome */
+    content: "\f005";
+    color: aquamarine;
+}
