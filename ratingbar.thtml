@@ -31,6 +31,7 @@ console.log(url);
 {!endif}
 {!if voting}
         <div id="rater_{item_id}" class="ratingstars enabled"
+            data-size="{bar_size}"
             data-type="{item_type}"
             data-item="{item_id}"
             data-ip="{ip_address}"
