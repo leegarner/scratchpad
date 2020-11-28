@@ -30,115 +30,6 @@
 *  from you if you're using this script.
 *
 */
-
-require_once 'lib-common.php';
-
-if ( !isset($_CONF['rating_speedlimit']) ) {
-    $_CONF['rating_speedlimit'] = 15;
-}
-
-header("Cache-Control: no-cache");
-header("Pragma: nocache");
-
-$status     = 0;
-$vote_sent  = (int)$_GET['j'];
-$id_sent    = COM_applyFilter($_GET['q']);
-$ip_sent    = preg_replace("/[^0-9\.\:]/","",$_GET['t']);
-$units      = (int)$_GET['c'];
-$size       = preg_replace("/[^0-9a-zA-Z]/","",$_GET['s']);
-$plugin     = isset($_GET['p']) ? COM_applyFilter($_GET['p']) : '';
-$ip         = $_SERVER['REAL_ADDR'];
-$ratingdate = time();
-$uid        = isset($_USER['uid']) ? (int)$_USER['uid'] : 1;
-
-if ($plugin == '') {
-    die('no type specified');
-}
-if ($vote_sent > $units || $vote_sent < 1) {
-    // kill the script because normal users will never see this.
-    die("Sorry, vote appears to be invalid.");
-}
-
-$canRate = PLG_canUserRate($plugin, $id_sent, $uid);
-$Rater = \glFusion\Rater::create($plugin, $id_sent);
-
-if ($canRate) {
-    // Check if the user has already voted.
-    $status = $Rater->userHasVoted();
-
-    COM_clearSpeedlimit($_CONF['rating_speedlimit'], 'rate');
-    $last = COM_checkSpeedlimit('rate');
-    if ($last == 0 && !$status && $ip == $ip_sent) {
-        //if the user hasn't yet voted, then vote normally...
-        // keep votes within range, make sure IP matches - no monkey business!
-        $Rater->addVote($vote_sent);
-        COM_updateSpeedlimit ('rate');
-    } else {
-        $status = 2;
-    }
-} else {
-    $status = 3;
-}
-$total_votes = $Rater->getTotalVotes();
-$new_rating = $Rater->getRating();
-$tense = ($total_votes == 1) ? $LANG13['vote'] : $LANG13['votes'];
-
-// set message
-switch ($status) {
-case 1:     // either IP or UID has already voted
-    $message = "<script>alert('". $LANG13['ip_rated'] . "');</script>";
-    break;
-case 2:     // voting too frequently
-    $message = "<script>alert('" .
-        sprintf($LANG13['rate_speedlimit'],$last,$_CONF['rating_speedlimit']) .
-        "');</script>";
-    break;
-case 3:     // no permission to vote or your already own the item
-    $message = "<script>alert('".$LANG13['own_rated']."');</script>";
-    break;
-default:    // vote recorded normally
-    $message = '<br><span class="thanks">&nbsp;' . $LANG13['thanks_for_vote'] . '</span>';
-    break;
-}
-
-// Updating the ratingbar and echo back to the javascript
-$newBar = $Rater->withWrapper(0)->withSize($size)->Render();
-echo implode("\n", array($newBar, $message));
-?>
-root@dogbert:/var/www/sites/dev/public_html# 
-root@dogbert:/var/www/sites/dev/public_html# cat ../private/classes/Rater.php 
-<?php
-/**
-* glFusion CMS
-*
-* glFusion Rating Interface
-*
-* @license Creative Commons Attribution 3.0 License.
-*     http://creativecommons.org/licenses/by/3.0/                              |
-*
-*  Copyright (C) 2008-2019 by the following authors:
-*   Mark R. Evans   mark AT glfusion DOT org
-*
-*  Based on original work Copyright (C) 2006,2007,2008 by the following authors:
-*   Ryan Masuga, masugadesign.com  - ryan@masugadesign.com
-*   Masuga Design
-*      http://masugadesign.com/the-lab/scripts/unobtrusive-ajax-star-rating-bar
-*   Komodo Media (http://komodomedia.com)
-*   Climax Designs (http://slim.climaxdesigns.com/)
-*   Ben Nolan (http://bennolan.com/behaviour/) for Behavio(u)r!
-*
-*  Homepage for this script:
-*  http://www.masugadesign.com/the-lab/scripts/unobtrusive-ajax-star-rating-bar/
-*
-*  This (Unobtusive) AJAX Rating Bar script is licensed under the
-*  Creative Commons Attribution 3.0 License
-*    http://creativecommons.org/licenses/by/3.0/
-*
-*  What that means is: Use these files however you want, but don't
-*  redistribute without the proper credits, please. I'd appreciate hearing
-*  from you if you're using this script.
-*
-*/
 namespace glFusion;
 use Template;
 
@@ -197,14 +88,6 @@ class Rater
      * Normal size uses the uk-icon-small class.
      * @var string */
     private $size = 'med';
-
-    /** Icon size class.
-     * @var string */
-    private $icon_size = 'uk-icon-small';
-
-    /** Icon width in pixels.
-     * @var integer */
-    private $icon_width = 15;
 
     /** Flag to wrap the rating bar in a wrapper.
      * @var boolean */
@@ -437,21 +320,17 @@ class Rater
     {
         switch ($size) {
         case 'sm':
-            $this->icon_width = 15;
-            $this->icon_size = '';
+            $this->size = 'sm';
             break;
         case 'med':
         case 'medium':
-            $this->icon_width = 20;
-            $this->icon_size = 'uk-icon-small';
+            $this->size = 'med';
             break;
         case 'lg':
         case 'large':
-            $this->icon_width = 25;
-            $this->icon_size = 'uk-icon-medium';
+            $this->size = 'lg';
             break;
         }
-        $this->size = $size;
         return $this;
     }
 
@@ -498,7 +377,7 @@ class Rater
             $rater_cls = '';
             $voting = 0;
         } else {
-            $rater_cls = 'ratingstar';
+            $rater_cls = 'ratingstar enabled';
             $voting = 1;
         }
 
@@ -525,9 +404,8 @@ class Rater
             $T->set_var(array(
                 'checked' => 'unchecked',
                 'points' => $i,
-                'icon_width' => $this->icon_width,
-                'icon_size' => $this->icon_size,
                 'rater_cls' => $rater_cls,
+                'size'      => $this->size,
             ) );
             $T->parse('Icons', 'ratingIcons', true);
         }
@@ -535,9 +413,8 @@ class Rater
             $T->set_var(array(
                 'checked' => 'half',
                 'points' => $i,
-                'icon_width' => $this->icon_width,
-                'icon_size' => $this->icon_size,
                 'rater_cls' => $rater_cls,
+                'size'      => $this->size,
             ) );
             $T->parse('Icons', 'ratingIcons', true);
             $i--;
@@ -546,9 +423,8 @@ class Rater
             $T->set_var(array(
                 'checked' => 'checked',
                 'points' => $i,
-                'icon_width' => $this->icon_width,
-                'icon_size' => $this->icon_size,
                 'rater_cls' => $rater_cls,
+                'size'      => $this->size,
             ) );
             $T->parse('Icons', 'ratingIcons', true);
         }
@@ -559,6 +435,13 @@ class Rater
     }
 
 
+    /**
+     * Get the star icon to show in a specific position.
+     *
+     * @param   $string $chk_type   Check status
+     * @param   integer $points     Number of points for the star
+     * @return  string      Icon HTML
+     */
     private function getStar($chk_type, $points)
     {
         /*if ($this->size == 'sm') {
@@ -642,7 +525,7 @@ class Rater
 
 
     /**
-    * Returns an array consisting of the rating_id, votes and rating.
+    * Returns a Rater object with current vote information set.
     *
     * @param    string  $type     plugin name
     * @param    string  $item_id  item id
