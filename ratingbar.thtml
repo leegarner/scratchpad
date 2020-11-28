@@ -38,13 +38,24 @@ $(document).ready(function() {
         <div class="ratingstars">
 {!endif}
 <!-- BEGIN ratingIcons -->
-{!!if {checked} == "checked" !!}
-            <i style="width:{icon_width}px;" class="{rater_cls} uk-icon uk-icon-star {icon_size} ratingStarChecked" data-points="{points}"></i>
-{!!elseif {checked} == "half" !!}
-            <i style="width:{icon_width}px;" class="{rater_cls} uk-icon uk-icon-star-half-o {icon_size} ratingStarChecked" data-points="{points}"></i>
+{!!if {size}=='lg' !!}
+  {!!set icon_size 'uk-icon-medium' !!}
+  {!!set icon_width '25' !!}
+{!!elseif {size}=='med' !!}
+  {!!set icon_size 'uk-icon-small' !!}
+  {!!set icon_width '20' !!}
 {!else}
-            <i style="width:{icon_width}px;" class="{rater_cls} uk-icon uk-icon-star-o {icon_size}" data-points="{points}"></i>
+  {!!set icon_size '' !!}
+  {!!set icon_width '15' !!}
 {!endif}
+{!!if {checked} == "checked" !!}
+    {!!set icon_cls 'uk-icon-star ratingStarChecked' !!}
+{!!elseif {checked} == 'half' !!}
+    {!!set icon_cls 'uk-icon-star-half-o ratingStarChecked' !!}
+{!else}
+    {!!set icon_cls 'uk-icon-star-o' !!}
+{!endif}
+            <i style="width:{icon_width}px;" class="{rater_cls} {icon_size} uk-icon {icon_cls} {icon_size} " data-points="{points}"></i>
 <!-- END ratingIcons -->
         </div>
         <span class="static">
